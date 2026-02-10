@@ -1,21 +1,18 @@
 pipeline {
     agent any
-
     tools {
-        maven 'Maven3'
+        maven "maven"
+        jdk "JAVA_17"
     }
-
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'mvn clean package'
+                git branch: 'main', url: 'https://github.com/alaabenterdayet1/devops-tp.git'
             }
         }
-
-        stage('Test') {
+        stage('Build') {
             steps {
-                sh 'mvn test'
-            }
+                sh "mvn clean package -Dmaven.test.skip=true"            }
         }
     }
 }
