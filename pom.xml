@@ -52,7 +52,11 @@
             <version>1.18.38</version>
             <scope>compile</scope> <!-- au lieu de provided -->
         </dependency>
-
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>runtime</scope>
+</dependency>
 
         <!-- SpringDoc OpenAPI UI -->
         <dependency>
