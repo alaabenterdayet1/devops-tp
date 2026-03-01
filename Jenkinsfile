@@ -29,13 +29,15 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                sh """
-                    mvn sonar:sonar \
-                      -Dsonar.projectKey=student-management \
-                      -Dsonar.projectName='Student Management' \
-                      -Dsonar.host.url=${SONAR_HOST_URL} \
-                      -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
-                """
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=student-management \
+                          -Dsonar.projectName='Student Management' \
+                          -Dsonar.host.url=${SONAR_HOST_URL} \
+                          -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
+                    """
+                }
             }
         }
         
@@ -43,16 +45,7 @@ pipeline {
             steps {
                 echo 'Waiting for Quality Gate...'
                 timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        try {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                echo "Quality Gate status: ${qg.status}"
-                            }
-                        } catch (Exception e) {
-                            echo "Quality Gate check failed: ${e.message}"
-                        }
-                    }
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
