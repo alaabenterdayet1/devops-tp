@@ -34,7 +34,7 @@ pipeline {
                       -Dsonar.projectKey=student-management \
                       -Dsonar.projectName='Student Management' \
                       -Dsonar.host.url=${SONAR_HOST_URL} \
-                      -Dsonar.token=162ec4ac13f09642e1b3b4c1f65a590b84499353
+                      -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
                 """
             }
         }
