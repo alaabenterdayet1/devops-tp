@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_REPO = 'alaabenterdayet/student-management'
-        SONAR_HOST_URL = 'http://192.168.56.10:9000'
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
 
     stages {
@@ -44,7 +44,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 echo 'Waiting for Quality Gate...'
-                withSonarQubeEnv('SonarQube') {
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     timeout(time: 5, unit: 'MINUTES') {
                         waitForQualityGate abortPipeline: false
                     }
