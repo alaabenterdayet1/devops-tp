@@ -1,12 +1,16 @@
-# (coller le contenu ci-dessus, puis CTRL+X, Y, ENTRÉE)pipeline {
+ipeline {
     agent any
-# Ajouter et commiter
-git add Jenkinsfile tools { maven "Maven" jdk "JDK17" git commit -m "Fix SonarQube URL to use 192.168.56.10" }
 
-    environment { DOCKER_HUB_REPO = 'alaabenterdayet/student-management' SONAR_HOST_URL = 
-        'http://192.168.56.10:9000'
-# Pousser }
-git push origin main
+    tools {
+        maven "Maven"
+        jdk "JDK17"
+    }
+
+    environment {
+        DOCKER_HUB_REPO = 'alaabenterdayet/student-management'
+        SONAR_HOST_URL = 'http://192.168.56.10:9000'
+    }
+
     stages {
         stage('Checkout') {
             steps {
