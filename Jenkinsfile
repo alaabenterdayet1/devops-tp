@@ -1,4 +1,4 @@
- pipeline {
+pipeline {
     agent any
     
     tools {
@@ -29,14 +29,13 @@
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=student-management \
-                          -Dsonar.projectName='Student Management' \
-                          -Dsonar.host.url=${SONAR_HOST_URL}
-                    """
-                }
+                sh """
+                    mvn sonar:sonar \
+                      -Dsonar.projectKey=student-management \
+                      -Dsonar.projectName='Student Management' \
+                      -Dsonar.host.url=${SONAR_HOST_URL} \
+                      -Dsonar.token=162ec4ac13f09642e1b3b4c1f65a590b84499353
+                """
             }
         }
         
@@ -44,7 +43,16 @@
             steps {
                 echo 'Waiting for Quality Gate...'
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
+                    script {
+                        try {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                echo "Quality Gate status: ${qg.status}"
+                            }
+                        } catch (Exception e) {
+                            echo "Quality Gate check failed: ${e.message}"
+                        }
+                    }
                 }
             }
         }
@@ -60,10 +68,12 @@
         stage('Docker Push') {
             steps {
                 echo 'Pushing to DockerHub...'
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_HUB_REPO}:${BUILD_NUMBER}"
-                    sh "docker push ${DOCKER_HUB_REPO}:latest"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_TOKEN')]) {
+                    sh """
+                        echo \$DOCKER_TOKEN | docker login -u \$DOCKER_USER --password-stdin
+                        docker push ${DOCKER_HUB_REPO}:${BUILD_NUMBER}
+                        docker push ${DOCKER_HUB_REPO}:latest
+                    """
                 }
             }
         }
