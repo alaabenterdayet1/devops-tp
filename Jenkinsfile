@@ -1,16 +1,16 @@
 pipeline {
     agent any
-    
+
     tools {
         maven "Maven"
         jdk "JDK17"
     }
-    
+
     environment {
         DOCKER_HUB_REPO = 'alaabenterdayet/student-management'
         SONAR_HOST_URL = 'http://192.168.56.10:9000'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -18,14 +18,14 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/alaabenterdayet1/devops-tp.git'
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Building with Maven...'
                 sh "mvn clean package -Dmaven.test.skip=true"
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
@@ -33,23 +33,25 @@ pipeline {
                     sh """
                         mvn sonar:sonar \
                           -Dsonar.projectKey=student-management \
-                          -Dsonar.projectName='Student Management' \
+                          -Dsonar.projectName=Student_Management \
                           -Dsonar.host.url=${SONAR_HOST_URL} \
                           -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
                     """
                 }
             }
         }
-        
+
         stage('Quality Gate') {
             steps {
                 echo 'Waiting for Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
+                withSonarQubeEnv('SonarQube') {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: false
+                    }
                 }
             }
         }
-        
+
         stage('Docker Build') {
             steps {
                 echo 'Building Docker image...'
@@ -57,7 +59,7 @@ pipeline {
                 sh "docker build -t ${DOCKER_HUB_REPO}:latest ."
             }
         }
-        
+
         stage('Docker Push') {
             steps {
                 echo 'Pushing to DockerHub...'
@@ -70,7 +72,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 echo 'Deploying container...'
@@ -82,7 +84,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         success {
             echo '✅ Pipeline exécuté avec succès!'
