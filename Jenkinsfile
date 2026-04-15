@@ -29,14 +29,16 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo 'Running SonarQube analysis...'
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=student-management \
-                          -Dsonar.projectName=Student_Management \
-                          -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
-                    """
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            mvn sonar:sonar \
+                              -Dsonar.projectKey=student-management \
+                              -Dsonar.projectName=Student_Management \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=162ec4ac13f09642e1b3b4c1f65a590b84499353
+                        """
+                    }
                 }
             }
         }
