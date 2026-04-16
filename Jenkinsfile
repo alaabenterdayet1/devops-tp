@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo 'Building Docker image...'
                 sh "docker build -t ${DOCKER_HUB_REPO}:${BUILD_NUMBER} ."
-                sh "docker tag  ${DOCKER_HUB_REPO}:${BUILD_NUMBER} ${DOCKER_HUB_REPO}:latest"
+                sh "docker tag ${DOCKER_HUB_REPO}:${BUILD_NUMBER} ${DOCKER_HUB_REPO}:latest"
             }
         }
 
@@ -83,12 +83,18 @@ pipeline {
             steps {
                 echo 'Deploying to Kubernetes...'
                 sh """
+                    # Forcer imagePullPolicy Always pour récupérer la nouvelle image
+                    kubectl patch deployment spring-app-deployment -n ${NAMESPACE} \
+                        -p '{"spec":{"template":{"spec":{"containers":[{"name":"spring-app","imagePullPolicy":"Always"}]}}}}'
+
+                    # Mettre à jour l'image
                     kubectl set image deployment/spring-app-deployment \
                         spring-app=${DOCKER_HUB_REPO}:${BUILD_NUMBER} \
                         -n ${NAMESPACE}
 
+                    # Attendre le rollout (timeout augmenté à 3 min car Spring Boot est lent)
                     kubectl rollout status deployment/spring-app-deployment \
-                        -n ${NAMESPACE} --timeout=120s
+                        -n ${NAMESPACE} --timeout=180s
                 """
             }
         }
@@ -120,7 +126,7 @@ pipeline {
                     sleep 2
                     kubectl port-forward svc/spring-app-service 8089:8089 \
                         -n ${NAMESPACE} --address 0.0.0.0 &
-                    sleep 5
+                    sleep 10
 
                     echo '=== Test Students ==='
                     curl -s http://localhost:8089/student/students/getAllStudents
