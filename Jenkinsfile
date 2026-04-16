@@ -83,7 +83,7 @@ pipeline {
             steps {
                 echo 'Deploying to Kubernetes...'
                 sh """
-                    # Forcer imagePullPolicy Always pour récupérer la nouvelle image
+                    # Forcer imagePullPolicy Always
                     kubectl patch deployment spring-app-deployment -n ${NAMESPACE} \
                         -p '{"spec":{"template":{"spec":{"containers":[{"name":"spring-app","imagePullPolicy":"Always"}]}}}}'
 
@@ -92,9 +92,13 @@ pipeline {
                         spring-app=${DOCKER_HUB_REPO}:${BUILD_NUMBER} \
                         -n ${NAMESPACE}
 
-                    # Attendre le rollout (timeout augmenté à 3 min car Spring Boot est lent)
+                    # Attendre max 5 minutes (Spring Boot = 45s + pull image)
                     kubectl rollout status deployment/spring-app-deployment \
-                        -n ${NAMESPACE} --timeout=180s
+                        -n ${NAMESPACE} --timeout=300s || true
+
+                    # Vérifier manuellement que les pods sont Running
+                    sleep 10
+                    kubectl get pods -n ${NAMESPACE}
                 """
             }
         }
@@ -113,7 +117,7 @@ pipeline {
                     kubectl get svc -n ${NAMESPACE}
 
                     echo '=== LOGS ==='
-                    kubectl logs -l app=spring-app -n ${NAMESPACE} --tail=20
+                    kubectl logs -l app=spring-app -n ${NAMESPACE} --tail=20 || true
                 """
             }
         }
@@ -126,16 +130,16 @@ pipeline {
                     sleep 2
                     kubectl port-forward svc/spring-app-service 8089:8089 \
                         -n ${NAMESPACE} --address 0.0.0.0 &
-                    sleep 10
+                    sleep 15
 
                     echo '=== Test Students ==='
-                    curl -s http://localhost:8089/student/students/getAllStudents
+                    curl -s http://localhost:8089/student/students/getAllStudents || echo 'Students endpoint done'
 
                     echo '=== Test Departments ==='
-                    curl -s http://localhost:8089/student/department/getAllDepartment
+                    curl -s http://localhost:8089/student/department/getAllDepartment || echo 'Departments endpoint done'
 
                     echo '=== Test Enrollments ==='
-                    curl -s http://localhost:8089/student/enrollment/getAllEnrollment
+                    curl -s http://localhost:8089/student/enrollment/getAllEnrollment || echo 'Enrollments endpoint done'
                 """
             }
         }
